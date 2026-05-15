@@ -6,12 +6,14 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Đăng kí → lưu thêm vào Firestore
-  Future<UserCredential?> register(String email, String password, String name) async {
+  Future<UserCredential?> register(
+    String email,
+    String password,
+    String name,
+  ) async {
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       // Lưu thông tin user vào Firestore
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
@@ -19,7 +21,11 @@ class AuthService {
         'name': name,
         'email': email,
         'createdAt': Timestamp.now(),
-    
+        'totalScore': 0, 
+        'streak': 0, 
+        'lastLoginDate': Timestamp.now(),
+        'totalWordsLearned': 0, 
+        'level': 'beginner',
       });
 
       return userCredential;
@@ -42,9 +48,18 @@ class AuthService {
 
   // Lấy thông tin user từ Firestore
   Future<Map<String, dynamic>?> getUserData(String uid) async {
-    DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
-    return doc.data() as Map<String, dynamic>?;
+  try {
+    DocumentSnapshot doc =
+        await _firestore.collection('users').doc(uid).get();
+    if (doc.exists) {
+      return doc.data() as Map<String, dynamic>?;
+    }
+    return null;
+  } catch (e) {
+    print('Lỗi getUserData: $e');
+    return null;
   }
+}
 
   // Đăng xuất
   Future<void> logout() async => await _auth.signOut();

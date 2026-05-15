@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 'English Learning',
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
-              const Text('Chào mừngeeeeeer trở lại!', style: TextStyle(color: Colors.grey)),
+              const Text('Chào mừng trở lại!', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 40),
 
               // Form
