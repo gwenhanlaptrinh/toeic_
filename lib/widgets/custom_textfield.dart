@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class CustomTextField extends StatelessWidget {
   final String hint;
   final IconData icon;
-  final bool isPassword;
   final TextEditingController controller;
+  final bool isPassword;
 
   const CustomTextField({
     super.key,
