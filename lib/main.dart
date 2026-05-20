@@ -5,6 +5,8 @@ import 'providers/auth_provider.dart';
 import 'screens/splash/splash_screen.dart';
 import 'providers/dictionary_provider.dart';
 import 'providers/library_provider.dart';
+import 'providers/course_provider.dart';
+import 'providers/user_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +18,9 @@ void main() async {
         // Bơm AuthProvider vào gốc cây widget để mọi view con đều đọc được trạng thái đăng nhập
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => DictionaryProvider()),
-        ChangeNotifierProvider(create: (_) => LibraryProvider()), // THÊM DÒNG NÀY
+        ChangeNotifierProvider(create: (_) => LibraryProvider()),
+        ChangeNotifierProvider(create: (_) => CourseProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MyApp(),
     ),

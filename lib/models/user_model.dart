@@ -4,7 +4,7 @@ class UserModel {
   final String name;
   final String avatarUrl;
   final int streak;
-  final int totalScore;
+  final int xp; 
   final bool isPlus;
 
   UserModel({
@@ -13,11 +13,10 @@ class UserModel {
     this.name = '',
     this.avatarUrl = '',
     this.streak = 0,
-    this.totalScore = 0,
+    this.xp = 0, 
     this.isPlus = false,
   });
 
-  // Chuyển từ JSON (Firestore) sang Object trong Flutter
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
     return UserModel(
       uid: id,
@@ -25,19 +24,18 @@ class UserModel {
       name: map['name'] ?? '',
       avatarUrl: map['avatarUrl'] ?? '',
       streak: map['streak'] ?? 0,
-      totalScore: map['totalScore'] ?? 0,
+      xp: map['xp'] ?? 0, 
       isPlus: map['isPlus'] ?? false,
     );
   }
 
-  // Chuyển từ Object sang JSON để lưu lên Firestore
   Map<String, dynamic> toMap() {
     return {
       'email': email,
       'name': name,
       'avatarUrl': avatarUrl,
       'streak': streak,
-      'totalScore': totalScore,
+      'xp': xp, 
       'isPlus': isPlus,
     };
   }

@@ -17,7 +17,6 @@ class LeaderboardScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Khối trang trí Header cho Bảng xếp hạng
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 20),
@@ -41,12 +40,11 @@ class LeaderboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
-          // Danh sách xếp hạng thời gian thực từ Firestore
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('users')
-                  .orderBy('totalScore', descending: true) // Sắp xếp điểm từ cao xuống thấp
+                  .orderBy('xp', descending: true) // Sắp xếp theo trường xp
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
@@ -68,13 +66,9 @@ class LeaderboardScreen extends StatelessWidget {
                     final doc = docs[index];
                     final data = doc.data() as Map<String, dynamic>;
                     
-                    // SỬA LỖI 1: Truyền thêm `doc.id` vào tham số thứ hai theo đúng cấu trúc UserModel.fromMap(data, id)
                     final userItem = UserModel.fromMap(data, doc.id);
-                    
-                    // Thứ hạng thực tế (index bắt đầu từ 0 nên hạng phải +1)
                     final rank = index + 1; 
 
-                    // Xác định màu sắc biểu tượng cho Top 3
                     Color rankColor = Colors.grey.shade400;
                     Widget rankWidget = Text(
                       '#$rank',
@@ -82,25 +76,23 @@ class LeaderboardScreen extends StatelessWidget {
                     );
 
                     if (rank == 1) {
-                      rankColor = Colors.amber; // Vàng
+                      rankColor = Colors.amber;
                       rankWidget = const Icon(Icons.workspace_premium, color: Colors.amber, size: 30);
                     } else if (rank == 2) {
-                      rankColor = Colors.blueGrey.shade300; // Bạc
+                      rankColor = Colors.blueGrey.shade300;
                       rankWidget = Icon(Icons.workspace_premium, color: Colors.blueGrey.shade300, size: 28);
                     } else if (rank == 3) {
-                      rankColor = Colors.brown.shade400; // Đồng
+                      rankColor = Colors.brown.shade400;
                       rankWidget = Icon(Icons.workspace_premium, color: Colors.brown.shade400, size: 26);
                     }
 
                     return Card(
                       margin: const EdgeInsets.symmetric(vertical: 6),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: rank <= 3 ? 2 : 0.5, // Top 3 sẽ hơi nổi lên một chút
+                      elevation: rank <= 3 ? 2 : 0.5,
                       child: ListTile(
                         leading: SizedBox(
                           width: 40,
-                          // SỬA LỖI 2: Áp dụng rankColor trực tiếp vào Circle hoặc Icon nếu muốn, 
-                          // hoặc để bọc nền nhẹ cho Top 3 sử dụng rankColor
                           child: CircleAvatar(
                             backgroundColor: rank <= 3 ? rankColor.withOpacity(0.1) : Colors.transparent,
                             child: rankWidget,
@@ -116,7 +108,6 @@ class LeaderboardScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            // Nếu là tài khoản Plus thì hiện mác nhỏ bên cạnh tên
                             if (userItem.isPlus)
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -133,7 +124,7 @@ class LeaderboardScreen extends StatelessWidget {
                         ),
                         subtitle: Text('🔥 Streak: ${userItem.streak} ngày'),
                         trailing: Text(
-                          '${userItem.totalScore} Pts',
+                          '${userItem.xp} XP', // ĐÃ ĐỔI: Lấy trường .xp và hiển thị chữ XP
                           style: TextStyle(
                             color: rank == 1 ? Colors.amber.shade800 : Colors.blue,
                             fontWeight: FontWeight.bold,

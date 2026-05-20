@@ -44,10 +44,10 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.menu_book_rounded, size: 90, color: Colors.white),
+            Icon(Icons.rocket_launch_rounded, size: 90, color: Colors.white),
             SizedBox(height: 16),
             Text(
-              'TOEIC LEARNING',
+              'TOEIC HACKER',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,

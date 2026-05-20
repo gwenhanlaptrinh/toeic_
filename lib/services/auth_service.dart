@@ -1,3 +1,5 @@
+// File: lib/services/auth_service.dart
+
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -5,7 +7,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Stream lắng nghe trạng thái đăng nhập (để dùng trong main.dart)
+  // Stream lắng nghe trạng thái đăng nhập
   Stream<User?> get userStream => _auth.authStateChanges();
 
   // Đăng ký tài khoản + Tạo Document trên Firestore
@@ -15,12 +17,12 @@ class AuthService {
       password: password
     );
 
-    // Lưu thông tin user vào Firestore ngay khi đăng ký thành công
+    // ĐÃ SỬA: Đổi 'totalScore' thành 'xp' để đồng bộ hệ thống điểm mới
     await _db.collection('users').doc(cred.user!.uid).set({
       'email': email,
       'name': name,
       'streak': 0,
-      'totalScore': 0,
+      'xp': 0, 
       'isPlus': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
