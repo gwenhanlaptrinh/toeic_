@@ -22,13 +22,22 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateUserStreakAndResetDaily();
-      context.read<UserProvider>().loadWrongWords(); 
-    });
-  }
+ @override
+void initState() {
+  super.initState();
+
+  WidgetsBinding.instance
+      .addPostFrameCallback((_) async {
+
+    await context
+        .read<UserProvider>()
+        .checkDailyReset();
+
+    await context
+        .read<UserProvider>()
+        .loadWrongWords();
+  });
+}
 
   // TỰ ĐỘNG RESET NHIỆM VỤ MỖI NGÀY & KIỂM TRA STREAK
   Future<void> _updateUserStreakAndResetDaily() async {
