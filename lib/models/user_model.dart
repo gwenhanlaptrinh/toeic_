@@ -6,6 +6,8 @@ class UserModel {
   final int streak;
   final int xp; 
   final bool isPlus;
+  final String role; // Thêm trường Phân quyền (admin hoặc user)
+  final DateTime? plusActivatedAt; // Thời điểm kích hoạt gói Plus
 
   UserModel({
     required this.uid,
@@ -15,6 +17,8 @@ class UserModel {
     this.streak = 0,
     this.xp = 0, 
     this.isPlus = false,
+    this.role = 'user', // Mặc định ai tạo nick cũng là 'user'
+    this.plusActivatedAt,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map, String id) {
@@ -26,6 +30,10 @@ class UserModel {
       streak: map['streak'] ?? 0,
       xp: map['xp'] ?? 0, 
       isPlus: map['isPlus'] ?? false,
+      role: map['role'] ?? 'user', // Lấy data từ DB, nếu không có thì là 'user'
+      plusActivatedAt: map['plusActivatedAt'] != null 
+          ? (map['plusActivatedAt'] as dynamic).toDate() 
+          : null,
     );
   }
 
@@ -37,6 +45,8 @@ class UserModel {
       'streak': streak,
       'xp': xp, 
       'isPlus': isPlus,
+      'role': role,
+      'plusActivatedAt': plusActivatedAt,
     };
   }
 }

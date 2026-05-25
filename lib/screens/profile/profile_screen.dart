@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../auth/login_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../plus/upgrade_plus_screen.dart'; 
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -31,14 +32,11 @@ class ProfileScreen extends StatelessWidget {
         final String userEmail = data['email'] ?? "hocvien@example.com";
         final int streakDays = data['streak'] ?? 0;
         final int currentXP = data['xp'] ?? 0;
-
         final int wordsLearnedCount = data['wordsLearnedCount'] ?? 0;
-        // Thêm trường Bài đã học bằng cách đếm độ dài của mảng
         final int completedLessonsCount =
             (data['completedLessons'] as List?)?.length ?? 0;
-
-        // Lấy Tổng XP của ngày hôm nay (chắc chắn chính xác 100%)
         final int dailyXpEarned = data['dailyXpEarned'] ?? 0;
+        final bool isPlus = data['isPlus'] ?? false; // Trạng thái tài khoản Plus
 
         final Map<String, dynamic> weeklyXpData =
             data['weeklyXp'] ??
@@ -60,35 +58,83 @@ class ProfileScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
+                
+                // 👑 TRANG TRÍ AVATAR ĐA TẦNG SIÊU ĐẸP CHO TÀI KHOẢN PREMIUM PLUS (ĐÃ XÓA CÂY BÚT)
                 Center(
                   child: Stack(
-                    alignment: Alignment.bottomRight,
+                    alignment: Alignment.center,
+                    clipBehavior: Clip.none,
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.blue.shade100,
-                        child: Text(
-                          userName.isNotEmpty ? userName[0].toUpperCase() : "U",
-                          style: const TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                      Container(
+                        padding: EdgeInsets.all(isPlus ? 4 : 0),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: isPlus
+                              ? LinearGradient(
+                                  colors: [
+                                    Colors.amber.shade800,
+                                    Colors.yellow.shade400,
+                                    Colors.orange.shade800,
+                                    Colors.amber.shade600,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                          boxShadow: isPlus
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.amber.withOpacity(0.5),
+                                    blurRadius: 18,
+                                    spreadRadius: 4,
+                                  )
+                                ]
+                              : null,
+                        ),
+                        child: Container(
+                          padding: EdgeInsets.all(isPlus ? 3 : 0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isPlus ? Colors.white : Colors.transparent,
+                          ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: isPlus ? Colors.amber.shade50 : Colors.blue.shade100,
+                            child: Text(
+                              userName.isNotEmpty ? userName[0].toUpperCase() : "U",
+                              style: TextStyle(
+                                fontSize: 34,
+                                fontWeight: FontWeight.bold,
+                                color: isPlus ? Colors.amber.shade900 : Colors.blue,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.circle,
+                      if (isPlus)
+                        Positioned(
+                          top: -16,
+                          child: Container(
+                            padding: const EdgeInsets.all(5),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                )
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.workspace_premium,
+                              color: Colors.amber.shade700,
+                              size: 26,
+                            ),
+                          ),
                         ),
-                        child: const Icon(
-                          Icons.edit,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -107,7 +153,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // BỔ SUNG: Chỉnh thành 4 cột thông số (Thêm Bài học)
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   decoration: BoxDecoration(
@@ -153,7 +198,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Truyền dailyXpEarned vào để fix dứt điểm lỗi hiển thị sai của ngày hôm nay
+                // Truyền thêm uid vào để kiểm tra trạng thái thanh toán
+                _buildPremiumBanner(context, isPlus, user.uid),
+                const SizedBox(height: 24),
+
                 _buildStatisticsChart(weeklyXpData, dailyXpEarned),
                 const SizedBox(height: 24),
 
@@ -164,32 +212,6 @@ class ProfileScreen extends StatelessWidget {
                       Icons.notifications_active_outlined,
                       'Nhắc nhở học tập',
                       true,
-                    ),
-                    _buildMenuItem(
-                      Icons.dark_mode_outlined,
-                      'Chế độ tối (Dark Mode)',
-                      false,
-                    ),
-                    _buildMenuItem(
-                      Icons.volume_up_outlined,
-                      'Tự động phát âm thanh',
-                      true,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildMenuSection(
-                  title: 'Khác',
-                  items: [
-                    _buildMenuItem(
-                      Icons.help_outline,
-                      'Hướng dẫn sử dụng',
-                      null,
-                    ),
-                    _buildMenuItem(
-                      Icons.info_outline,
-                      'Thông tin ứng dụng',
-                      null,
                     ),
                   ],
                 ),
@@ -248,53 +270,228 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatisticsChart(
-    Map<String, dynamic> weeklyXp,
-    int dailyXpEarned,
-  ) {
-    // FIX ĐÚNG THỨ TRONG TUẦN
-    List<String> weekdays = ["", "T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-
-    String todayStr = weekdays[DateTime.now().weekday];
-
-    final List<Map<String, dynamic>> weeklyData = [
-      {
-        'day': 'T2',
-        'xp': todayStr == 'T2' ? dailyXpEarned : (weeklyXp['T2'] ?? 0),
-      },
-      {
-        'day': 'T3',
-        'xp': todayStr == 'T3' ? dailyXpEarned : (weeklyXp['T3'] ?? 0),
-      },
-      {
-        'day': 'T4',
-        'xp': todayStr == 'T4' ? dailyXpEarned : (weeklyXp['T4'] ?? 0),
-      },
-      {
-        'day': 'T5',
-        'xp': todayStr == 'T5' ? dailyXpEarned : (weeklyXp['T5'] ?? 0),
-      },
-      {
-        'day': 'T6',
-        'xp': todayStr == 'T6' ? dailyXpEarned : (weeklyXp['T6'] ?? 0),
-      },
-      {
-        'day': 'T7',
-        'xp': todayStr == 'T7' ? dailyXpEarned : (weeklyXp['T7'] ?? 0),
-      },
-      {
-        'day': 'CN',
-        'xp': todayStr == 'CN' ? dailyXpEarned : (weeklyXp['CN'] ?? 0),
-      },
-    ];
-
-    int maxCurrentXp = weeklyData
-        .map((e) => e['xp'] as int)
-        .reduce((a, b) => a > b ? a : b);
-
-    if (maxCurrentXp < 100) {
-      maxCurrentXp = 100;
+  // 👑 ĐÃ SỬA: Lắng nghe trạng thái Giao dịch nếu chưa phải PLUS
+  Widget _buildPremiumBanner(BuildContext context, bool isPlus, String uid) {
+    if (isPlus) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.amber.shade600, Colors.orange.shade700],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.amber.shade300.withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.workspace_premium, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TÀI KHOẢN PLUS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Đã mở khóa mọi bài học cao cấp ✨',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
     }
+
+    // Nếu CHƯA là PLUS -> Kiểm tra xem có đang gửi yêu cầu thanh toán không
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('payment_requests')
+          .where('uid', isEqualTo: uid)
+          .where('status', isEqualTo: 'pending')
+          .snapshots(),
+      builder: (context, snapshot) {
+        // Đang quét dữ liệu thì ẩn nhẹ đi
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(height: 80);
+        }
+
+        final isPending = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+        // CÓ YÊU CẦU ĐANG CHỜ DUYỆT
+        if (isPending) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange.shade400, Colors.deepOrange.shade400],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.orange.shade200.withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Đang Chờ Xử Lý PLUS...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Admin đang kiểm tra giao dịch của bạn ⏳',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // KHÔNG CÓ YÊU CẦU NÀO ĐANG CHỜ -> Hiện bảng Nâng cấp bình thường
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const UpgradePlusScreen()),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.indigo.shade900, Colors.blue.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blue.shade200.withOpacity(0.4),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.workspace_premium, color: Colors.amber, size: 28),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nâng Cấp PLUS Ngay!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Mở khóa trọn bộ bài học & Đột phá TOEIC 👑',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatisticsChart(Map<String, dynamic> weeklyXp, int dailyXpEarned) {
+    List<String> weekdays = ["", "T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    
+    // Lấy ra index của ngày hôm nay (T2 = 1, T3 = 2, ..., CN = 7)
+    int currentWeekdayIndex = DateTime.now().weekday; 
+    String todayStr = weekdays[currentWeekdayIndex];
+
+    final List<Map<String, dynamic>> weeklyData = [];
+
+    // 👑 LOGIC LỌC BÓNG MA TUẦN CŨ (TIME MASK)
+    for (int i = 1; i <= 7; i++) {
+      String dayKey = weekdays[i];
+      int xp = 0;
+
+      if (i < currentWeekdayIndex) {
+        // Các ngày ĐÃ QUA trong tuần này -> Lấy từ database bình thường
+        xp = weeklyXp[dayKey] ?? 0;
+      } else if (i == currentWeekdayIndex) {
+        // HÔM NAY -> Ưu tiên lấy điểm realtime mới nhất (Tránh việc Firebase chậm đồng bộ)
+        int fbXp = weeklyXp[dayKey] ?? 0;
+        xp = fbXp > dailyXpEarned ? fbXp : dailyXpEarned;
+      } else {
+        // CÁC NGÀY CHƯA TỚI (Tương lai) -> Chắc chắn phải là 0 (Ép về 0 để xóa sạch data rác tuần trước)
+        xp = 0; 
+      }
+
+      weeklyData.add({'day': dayKey, 'xp': xp});
+    }
+
+    // Tìm giá trị XP cao nhất để chia tỷ lệ chiều cao cột (Tối thiểu là 100 để cột không quá cao khi điểm thấp)
+    int maxCurrentXp = weeklyData.map((e) => e['xp'] as int).reduce((a, b) => a > b ? a : b);
+    if (maxCurrentXp < 100) maxCurrentXp = 100;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,11 +500,7 @@ class ProfileScreen extends StatelessWidget {
           padding: EdgeInsets.only(left: 4, bottom: 10),
           child: Text(
             'Thống kê tuần này',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
         ),
         Container(
@@ -316,11 +509,7 @@ class ProfileScreen extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(
-                color: Colors.grey.shade100,
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
+              BoxShadow(color: Colors.grey.shade100, blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: Row(
@@ -328,11 +517,7 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: weeklyData.map((data) {
               final int xp = data['xp'];
-
-              final double columnHeight = xp > 0
-                  ? (xp / maxCurrentXp) * 120
-                  : 6;
-
+              final double columnHeight = xp > 0 ? (xp / maxCurrentXp) * 120 : 6;
               final bool isToday = data['day'] == todayStr;
 
               return Column(
@@ -346,29 +531,22 @@ class ProfileScreen extends StatelessWidget {
                       color: isToday ? Colors.blue : Colors.grey,
                     ),
                   ),
-
                   const SizedBox(height: 6),
-
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     width: 24,
-                    height: columnHeight.clamp(6, 120),
-
+                    height: columnHeight.clamp(6.0, 120.0), // Chiều cao tối thiểu 6px để luôn thấy được chân cột
                     decoration: BoxDecoration(
                       color: isToday ? Colors.blue : Colors.blue.shade100,
-
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     data['day'],
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-
                       color: isToday ? Colors.black87 : Colors.grey.shade600,
                     ),
                   ),
@@ -381,34 +559,19 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(
-    IconData icon,
-    Color color,
-    String value,
-    String label,
-  ) {
+  Widget _buildStatItem(IconData icon, Color color, String value, String label) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: color,
-          size: 24,
-        ), // Thu nhỏ size icon một chút để vừa vặn 4 cột
+        Icon(icon, color: color, size: 24),
         const SizedBox(height: 6),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ), // Giảm nhẹ size chữ
+        Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 2),
         Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }
 
-  Widget _buildMenuSection({
-    required String title,
-    required List<Widget> items,
-  }) {
+  Widget _buildMenuSection({required String title, required List<Widget> items}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -416,11 +579,7 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 8),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
         ),
         Container(

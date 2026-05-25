@@ -280,78 +280,60 @@ Future<void> updateLessonCompletion({
 }
 
   Future<void> checkDailyReset() async {
-  try {
-    final user = _auth.currentUser;
-    if (user == null) return;
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) return;
 
-    final userDocRef = _firestore.collection('users').doc(user.uid);
-    final doc = await userDocRef.get();
-    if (!doc.exists) return;
+  final userDoc = await _firestore.collection('users').doc(uid).get();
+  if (!userDoc.exists) return;
 
-    final data = doc.data()!;
-    String lastActiveDate = data['lastActiveDate'] ?? '';
-    String lastWeeklyResetDate = data['lastWeeklyResetDate'] ?? '';
+  final data = userDoc.data() as Map<String, dynamic>;
+  final lastActiveTimestamp = data['lastActive'] as Timestamp?;
+  
+  final now = DateTime.now();
+  
+  if (lastActiveTimestamp != null) {
+    final lastActive = lastActiveTimestamp.toDate();
+    
+    // 1. KIỂM TRA RESET NGÀY (Cũ)
+    final isDifferentDay = now.day != lastActive.day ||
+                           now.month != lastActive.month ||
+                           now.year != lastActive.year;
 
-    DateTime now = DateTime.now();
-    DateTime todayDate = DateTime(now.year, now.month, now.day);
-    String today = "${todayDate.year.toString().padLeft(4, '0')}-"
-        "${todayDate.month.toString().padLeft(2, '0')}-"
-        "${todayDate.day.toString().padLeft(2, '0')}";
-
-    Map<String, dynamic> updates = {};
-
-    // =====================
-    // DAILY RESET & STREAK CHECK
-    // =====================
-    if (lastActiveDate.isNotEmpty) {
-      DateTime lastDate = DateTime.parse(lastActiveDate);
-      DateTime cleanLastDate = DateTime(lastDate.year, lastDate.month, lastDate.day);
-      int difference = todayDate.difference(cleanLastDate).inDays;
-
-      // Hễ cứ qua ngày mới (>= 1) là reset tiến trình nhiệm vụ ngày
-      if (difference >= 1) {
-        updates['dailyXpEarned'] = 0;
-        updates['dailyLessonsCompleted'] = 0;
-        updates['rewardMission1Claimed'] = false;
-        updates['rewardMission2Claimed'] = false;
-      }
-
-      // NẾU BỎ QUÁ 1 NGÀY: Reset chuỗi streak về 0 ngay trên màn hình chính
-      if (difference > 1) {
-        updates['streak'] = 0;
-      }
+    if (isDifferentDay) {
+      await _firestore.collection('users').doc(uid).update({
+        'dailyXpEarned': 0,
+        'lastActive': FieldValue.serverTimestamp(), // Cập nhật ngày hoạt động mới nhất
+      });
     }
 
-    // =====================
-    // WEEKLY RESET
-    // =====================
-    bool shouldResetWeekly = false;
-    if (lastWeeklyResetDate.isNotEmpty) {
-      DateTime lastReset = DateTime.parse(lastWeeklyResetDate);
-      DateTime cleanResetDate = DateTime(lastReset.year, lastReset.month, lastReset.day);
-      int difference = todayDate.difference(cleanResetDate).inDays;
+    // 2. LOGIC FIX LỖI: KIỂM TRA RESET TUẦN MỚI
+    // Tìm ngày Thứ 2 của tuần trước và Thứ 2 của tuần này để so sánh
+    DateTime lastMonday = lastActive.subtract(Duration(days: lastActive.weekday - 1));
+    DateTime currentMonday = now.subtract(Duration(days: now.weekday - 1));
+    
+    // Đưa về mốc 00:00:00 giờ để so sánh chính xác ngày
+    lastMonday = DateTime(lastMonday.year, lastMonday.month, lastMonday.day);
+    currentMonday = DateTime(currentMonday.year, currentMonday.month, currentMonday.day);
 
-      if (difference >= 7) {
-        shouldResetWeekly = true;
-      }
-    } else {
-      shouldResetWeekly = true;
+    // Nếu Thứ 2 tuần này lớn hơn Thứ 2 của lần cuối online -> Đã sang tuần mới!
+    if (currentMonday.isAfter(lastMonday)) {
+      await _firestore.collection('users').doc(uid).update({
+        'weeklyXp': {
+          'T2': 0,
+          'T3': 0,
+          'T4': 0,
+          'T5': 0,
+          'T6': 0,
+          'T7': 0,
+          'CN': 0,
+        }
+      });
     }
-
-    if (shouldResetWeekly) {
-      updates['weeklyXp'] = {'T2': 0, 'T3': 0, 'T4': 0, 'T5': 0, 'T6': 0, 'T7': 0, 'CN': 0};
-      updates['lastWeeklyResetDate'] = today;
-    }
-
-    // =====================
-    // UPDATE FIRESTORE
-    // =====================
-    if (updates.isNotEmpty) {
-      await userDocRef.update(updates);
-      notifyListeners();
-    }
-  } catch (e) {
-    debugPrint("checkDailyReset error: $e");
+  } else {
+    // Nếu tài khoản mới tinh chưa có lastActive
+    await _firestore.collection('users').doc(uid).update({
+      'lastActive': FieldValue.serverTimestamp(),
+    });
   }
 }
   }
