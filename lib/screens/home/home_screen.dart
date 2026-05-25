@@ -16,6 +16,7 @@ import '../games/word_scramble_game.dart';
 import '../games/word_match_game.dart';
 import '../community/community_screen.dart';
 import '../admin/admin_dashboard_screen.dart'; // ĐÃ IMPORT: Màn hình quản trị cho Admin
+import '../../services/notification_service.dart'; // 👑 THÊM IMPORT SERVICE THÔNG BÁO
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +27,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  
+  // 👑 BIẾN CỜ: Để đảm bảo thông báo chỉ kêu 1 lần duy nhất lúc vừa vào trang chủ
+  bool _hasShownWelcome = false;
 
   @override
   void initState() {
@@ -119,8 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
         final data = snapshot.data!.data() as Map<String, dynamic>;
         final String role = data['role'] ?? 'user';
+        final String userName = data['name'] ?? "Học viên";
 
-        // 👑 1/ TRANG ADMIN GIỜ CHỈ CÒN TRANG QUẢN TRỊ KHÔNG CÒN THANH ĐIỀU HƯỚNG USER NỮA
+        // 👑 GỌI THÔNG BÁO CHÀO MỪNG NGAY LẬP TỨC (NẾU CHƯA GỌI)
+        if (!_hasShownWelcome) {
+          _hasShownWelcome = true;
+          NotificationService().showWelcomeNotification(userName);
+        }
+
+        // 1/ TRANG ADMIN GIỜ CHỈ CÒN TRANG QUẢN TRỊ KHÔNG CÒN THANH ĐIỀU HƯỚNG USER NỮA
         if (role == 'admin') {
           return const AdminDashboardScreen();
         }

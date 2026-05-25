@@ -7,11 +7,18 @@ import 'providers/dictionary_provider.dart';
 import 'providers/library_provider.dart';
 import 'providers/course_provider.dart';
 import 'providers/user_provider.dart';
+import 'services/notification_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // Khởi tạo kết nối hệ sinh thái Firebase backend
-  
+  await NotificationService().initNotification();
+  // BẬT CHẾ ĐỘ OFFLINE CHO FIRESTORE
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true, // Kích hoạt lưu trữ cục bộ
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED, // Không giới hạn dung lượng cache (hoặc set 10485760 cho 10MB)
+  );
   runApp(
     MultiProvider(
       providers: [

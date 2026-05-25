@@ -30,6 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Thêm các package này dưới các package hiện tại của bạn:
+  flutter_local_notifications: ^17.0.0
+  timezone: ^0.9.4
+  flutter_timezone: ^3.0.1
+  shared_preferences: ^2.2.3
 
   
     # Firebase
