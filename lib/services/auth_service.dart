@@ -8,6 +8,7 @@ class AuthService {
 
   final FirebaseFirestore _db =
       FirebaseFirestore.instance;
+      User? get currentUser => _auth.currentUser;
 
   // =========================
   // AUTH STREAM

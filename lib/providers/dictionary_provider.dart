@@ -14,23 +14,24 @@ class DictionaryProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<void> search(String word) async {
-    if (word.trim().isEmpty) return;
+  if (word.trim().isEmpty) return;
 
-    _isLoading = true;
-    _errorMessage = null;
-    _searchedWord = null;
-    notifyListeners(); // Báo cho UI hiện vòng xoay Loading
+  _isLoading = true;
+  _errorMessage = null;
+  _searchedWord = null;
+  notifyListeners();
 
-    try {
-      _searchedWord = await _dictionaryService.searchWord(word.trim().toLowerCase());
-    } catch (e) {
-      // Bỏ chữ "Exception: " trong chuỗi lỗi để giao diện đẹp hơn
-      _errorMessage = e.toString().replaceAll("Exception: ", "");
-    } finally {
-      _isLoading = false;
-      notifyListeners(); // Báo cho UI tắt Loading và hiện kết quả/lỗi
-    }
+  try {
+    _searchedWord = await _dictionaryService
+        .searchWord(word.trim().toLowerCase())
+        .timeout(const Duration(seconds: 20));
+  } catch (e) {
+    _errorMessage = e.toString().replaceFirst('Exception: ', '');
+  } finally {
+    _isLoading = false;
+    notifyListeners();
   }
+}
 
   // Hàm xóa kết quả khi người dùng đóng ô tìm kiếm
   void clearSearch() {
